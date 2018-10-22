@@ -6,7 +6,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
-import Opt_Moto
+# import Opt_Moto
 
 
 style.use("fivethirtyeight")
@@ -36,7 +36,7 @@ def animate(i):
     ax1.set_title("Channel 1 / Fly Position")
     ax1.set_ylabel("V")
     ax1.plot(xs, ys)
-    ax1.set_ylim(0, 8)
+    ax1.set_ylim(0, 2.5)
 
     xs2 = []
     ys2 =[]
