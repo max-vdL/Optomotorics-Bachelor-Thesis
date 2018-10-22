@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DTS_xml>
+<metadata>
+	<license URI="http://opendatacommons.org/licenses/pddl">PDDL</license>
+	<URIs>
+		<recording></recording>
+		<analysis></analysis>
+		<datamodel></datamodel>
+	</URIs>
+	<experimenter>
+		<firstname></firstname>
+		<lastname></lastname>
+		<orcid></orcid>
+	</experimenter>	
+	<fly type="control">
+		<name></name>
+		<description></description>
+		<flybase></flybase>
+	</fly>
+	<experiment type="Optomotor">
+		<dateTime></dateTime>
+		<duration></duration>
+		<description></description>
+		<sample_rate></sample_rate>
+		<arena_type>motor</arena_type>
+		<meter_type></meter_type>
+	</experiment>
+</metadata>
+<sequence periods="7">
+</sequence>
+<timeseries>
+	<CSV_descriptor>
+		<delimiter>tab</delimiter>
+		<header>0</header>
+		<nullSequence>NaN</nullSequence>
+	</CSV_descriptor>
+	<variables>
+		<variable number="1">
+		    <type>fly</type>		
+			<var_type>float32</var_type>
+			<unit>arb_unit</unit>
+		</variable>	
+		<variable number="2">
+		    <type>arena</type>		
+			<var_type>float32</var_type>
+			<unit>arb_unit</unit>
+		</variable>
+		<variable number="3">
+			<type>time</type>
+			<var_type>int16</var_type>
+			<unit>ms</unit>
+		</variable>
+		<variable number="4">
+		    <type>period</type>		
+			<var_type>uint8</var_type>
+			<unit>number</unit>
+		</variable>	
+	</variables>
+	<csv_data>
+	</csv_data>
+</timeseries>
+</DTS_xml>

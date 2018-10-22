@@ -16,8 +16,7 @@ import xml.etree.ElementTree as et
 import time as t
 import os as os
 from winsound import Beep
-from shutil import copy
-
+from shutil import copy, move
 
 class ULAIO01(UIExample):
     def __init__(self, master=None):
@@ -25,6 +24,8 @@ class ULAIO01(UIExample):
 
         self.period = 0
         self.period_switch = []
+
+        self.tempo = None   # for arena output
 
         self.board_num = 0
         self.ai_props = AnalogInputProps(self.board_num)
@@ -50,7 +51,8 @@ class ULAIO01(UIExample):
             self.set_input_ui_idle_state()
             return
 
-        rate = 100
+        rate = int(self.input_Samplingrate.get()) # data sampling rate per second
+        # self.samplingrate = rate
         points_per_channel = self.test_time()
         total_count = points_per_channel * self.num_input_chans
         range_ = self.ai_props.available_ranges[0]
@@ -104,6 +106,10 @@ class ULAIO01(UIExample):
         # Start updating the displayed values
         self.update_input_displayed_values(range_)
 
+        # Start the arena output
+        self.update_arena_output()
+
+
     def update_input_displayed_values(self, range_):
         # Get the status from the device
         status, curr_count, curr_index = ul.get_status(
@@ -145,10 +151,15 @@ class ULAIO01(UIExample):
 
     def update_input_period(self, curr_count):
         if t.clock() > self.periodtimevar:
-            Beep(2000, 500)
+            # Beep(2000, 500)
             self.period += 1 # switch to next period
             self.periodtimevar = self.periodtimevar + self.periodtime
-            self.period_switch.append(curr_count)
+            self.period_switch.append(curr_count) # documentation of period switch
+
+            if self.period == 1:
+                self.tempo = ULAIO01.output_value
+            # self.tempo = self.tempo * -1
+            self.update_arena_output()
 
     def display_input_values(self, range_, curr_index, curr_count):
         per_channel_display_count = 1
@@ -185,7 +196,7 @@ class ULAIO01(UIExample):
                         self.board_num, range_, raw_value)
                 ULAIO01.channel_text[chan_num - low_chan] += (
                     '{:.3f}'.format(ULAIO01.eng_value) + "\n")
-                self.datasheet() # function for all the modified stuff
+                self.datasheet() # custom datahandling
 
                 if chan_num == high_chan:
                     chan_num = low_chan
@@ -225,15 +236,18 @@ class ULAIO01(UIExample):
 
 
 
-    def update_value(self):
+    def update_arena_output(self):
         channel = self.get_channel_num()
         ao_range = self.ao_props.available_ranges[0]
         data_value = self.get_data_value()
 
-        raw_value = ul.from_eng_units(self.board_num, ao_range, data_value)
-        print(raw_value)
+        if self.tempo is not None:
+            ULAIO01.output_value = self.tempo
+        else:
+            ULAIO01.output_value = ul.from_eng_units(self.board_num, ao_range, data_value)
+
         try:
-            ul.a_out(self.board_num, channel, ao_range, raw_value)
+            ul.a_out(self.board_num, channel, ao_range, ULAIO01.output_value)
         except ULError as e:
             self.show_ul_error(e)
 
@@ -419,22 +433,55 @@ class ULAIO01(UIExample):
     #     self.start_output_scan()
 
     def stop_input(self):
+        status, curr_count, curr_index = ul.get_status(
+            self.board_num, FunctionType.AIFUNCTION)
+        my_array = self.ctypes_array
         ul.stop_background(self.board_num, FunctionType.AIFUNCTION)
+        open("KHZtext.txt", "w")  # clear existing file
+        endfile = open("KHZtext.txt", "a+")  # textfile that the data will be written to (kiloherztext)
+        millisec = 0  # the time column parameter in milliseconds
+        ULAIO01.txt_count = 0  # for the order of the KHZtext file
+        self.period = 0
+        print("periodsw", self.period_switch)
+        print("count", curr_count)
+        for i in list(range(0, curr_count)):  # curr_count should represent the length of the ctypes_array
+            eng_value = ul.to_eng_units(
+                self.board_num, self.ai_props.available_ranges[0], my_array[i])
+            eng_value_proper = ("%f " % (
+                eng_value))  # thats how it is supposed to be written into the txt file, but right now it isn't unicode
+            endfile.write(eng_value_proper.decode(
+                "unicode-escape"))  # eng_value returns float, but after (4) floats all channels are printed (also: encode to utf8 format)
+            ULAIO01.txt_count = ULAIO01.txt_count + 1  # thats why we need the count (know when to newline)
+            if self.period < len(self.period_switch) and i == self.period_switch[
+                self.period]:  # when we iterated to the point where a new period was started, we need to switch the period parameter
+                self.period = self.period + 1
+                print("hat funktioniert", self.period)
+            if ULAIO01.txt_count == ((self.input_high_chan - self.input_low_chan) + 1):
+                endfile.write(u"%d %d\n" % (millisec, self.period))
+                ULAIO01.txt_count = 0
+                millisec = millisec + 10  # for each loop the next millisecond is measured
+        Beep(3000, 500)
 
     def set_input_ui_idle_state(self):
         self.input_high_channel_entry["state"] = tk.NORMAL
         self.input_low_channel_entry["state"] = tk.NORMAL
+        self.periodbox["state"] = tk.NORMAL
+        self.testtimebox["state"] = tk.NORMAL
         self.input_start_button["command"] = self.start_input
         self.input_start_button["text"] = "Start Analog Input"
 
     def start_input(self):
         self.input_high_channel_entry["state"] = tk.DISABLED
         self.input_low_channel_entry["state"] = tk.DISABLED
-        self.input_start_button["command"] = self.stop_input()
+        self.periodbox["state"] = tk.DISABLED
+        self.testtimebox["state"] = tk.DISABLED
+        #self.input_start_button["command"] = self.stop_input()
         if self.input_start_button["text"] == "Stop Analog Input":
             self.full_file()
-        self.input_start_button["text"] = "Stop Analog Input"
-        self.start_input_scan()
+            self.input_start_button["text"] = "Start Analog Input"
+        else:
+            self.input_start_button["text"] = "Stop Analog Input"
+            self.start_input_scan()
 
     def get_input_low_channel_num(self):
         if self.ai_props.num_ai_chans == 1:
@@ -507,43 +554,12 @@ class ULAIO01(UIExample):
 
     # Function for writing all data to the text file, which will be used for the xml file
     def full_file(self):
-        status, curr_count, curr_index = ul.get_status(
-            self.board_num, FunctionType.AIFUNCTION)
-        my_array = self.ctypes_array
         self.stop_input()
-        open("KHZtext.txt", "w") # clear existing file
-        endfile = open("KHZtext.txt", "a+")  # textfile that the data will be written to (kiloherztext)
-        millisec = 0 # the time column parameter in milliseconds
-        ULAIO01.txt_count = 0 # for the order of the KHZtext file
-        self.period = 0
-        print("periodsw", self.period_switch)
-        print("count", curr_count)
-        for i in list(range(0, curr_count)): # curr_count should represent the length of the ctypes_array
-            eng_value = ul.to_eng_units(
-                self.board_num, self.ai_props.available_ranges[0], my_array[i])
-            eng_value_proper = ("%f " % (eng_value))  # thats how it is supposed to be written into the txt file, but right now it isn't unicode
-            endfile.write(eng_value_proper.decode("unicode-escape"))  # eng_value returns float, but after (4) floats all channels are printed (also: encode to utf8 format)
-            ULAIO01.txt_count = ULAIO01.txt_count + 1   # thats why we need the count (know when to newline)
-            if self.period < len(self.period_switch) and i == self.period_switch[self.period]: # when we iterated to the point where a new period was started, we need to switch the period parameter
-                self.period = self.period +1
-                print("hat funktioniert", self.period)
-            if ULAIO01.txt_count == ((self.input_high_chan - self.input_low_chan) + 1):
-                endfile.write(u"%d %d\n" % (millisec, self.period))
-                ULAIO01.txt_count = 0
-                millisec = millisec + 10  # for each loop the next millisecond is measured
-        Beep(3000, 500)
+
 
     # The process of writing the finished text file to the xml file
     def txt_to_xml(self):
-        # status, curr_count, curr_index = ul.get_status(
-        #     self.board_num, FunctionType.AOFUNCTION)
-        # if status == Status.IDLE:
-        #     textfile = open("KHZtext.txt", "r") # text with periods for xml
-        #     text = textfile.read()
-        #     tree = et.parse("Opt_moto_xml.xml")#C:\Bachelor\FinishedSoft\
-        #     csv = tree.find("./timeseries/csv_data")  # adress the right spot for the data
-        #     csv.text = text  # implement the data in the xml
-        #     tree.write("Opt_moto_xml.xml")
+
 
         # del last line in KHZtext: (source: https://stackoverflow.com/questions/1877999/delete-final-line-in-file-with-python)
 
@@ -568,9 +584,96 @@ class ULAIO01(UIExample):
             file.seek(pos, os.SEEK_SET)
             file.truncate()
 
+
+        status, curr_count, curr_index = ul.get_status(
+            self.board_num, FunctionType.AOFUNCTION)
+        if status == Status.IDLE:
+            datafile = open("KHZtext.txt", "r") # text with periods for xml
+            data = datafile.read()
+            xml_name = self.input_ExperimentDescription.get() + ".xml"
+            print(xml_name)
+            target_folder = os.path.join(os.curdir, "AndersSoft")
+            target_file = os.path.join(target_folder, "Optomotorics_blueprint.xml")
+            xml_location = os.path.join(target_folder, xml_name)
+            copy("Optomotorics_blueprint.xml", "AndersSoft")
+            move(target_file, xml_location)
+            tree = et.parse(xml_location)#C:\Bachelor\FinishedSoft\
+
+            x = tree.find("./metadata/experimenter/firstname")
+            x.text = str(self.input_firstname.get())
+            print(x.text)
+
+            x = tree.find("./metadata/experimenter/lastname")
+            x.text = str(self.input_lastname.get())
+
+            x = tree.find("./metadata/fly")
+            x.attribute = str(self.input_flytype.get())
+
+            x = tree.find("./metadata/fly/name")
+            x.text = str(self.input_flyname.get())
+
+            x = tree.find("./metadata/fly/description")
+            x.text = str(self.input_flydescription.get())
+
+            # x = tree.find("./metadata/experiment")
+            # x.attribute = str(self.input_experimenttype
+
+            x = tree.find("./metadata/experiment/dateTime")
+            x.text = str(self.input_dateTime.get())
+
+            x = tree.find("./metadata/experiment/duration")
+            x.text = str(self.input_duration.get())
+
+            x = tree.find("./metadata/experiment/description")
+            x.text = str(self.input_ExperimentDescription.get())
+
+            x = tree.find("./metadata/experiment/sample_rate")
+            x.text = str(self.input_Samplingrate.get())
+
+            self.sequences = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get())) + 1
+            sequence = tree.find("./sequence")
+            sequence.attribute = self.sequences
+
+            # perioddescription
+            # for period in sequence:
+            #     if period.attribute > self.sequences:
+            #         sequence.remove(period)
+            #     if period.attribute % 2 == 0:
+            #         type = et.SubElement(period, "type")
+            #         type.text = "OptomotoR"
+            #     else:
+            #         type = et.SubElement(period, "type")
+            #         type.text = "OptomotoL"
+            #     duration = et.SubElement(period, "duration")
+            #     duration.text = self.periodtime
+            #     outcome = et.SubElement(period, "outcome")
+            #     outcome.text = self.outcome
+            #     pattern = et.SubElement(period, "pattern")
+            #     pattern.text = self.pattern
+            for i in list(range(1, self.sequences)):
+                period = et.SubElement(sequence, "period")
+                period.set("number", "%d" %i)
+                print(et.tostring(period))
+                if i % 2 == 0:
+                    type = et.SubElement(period, "type")
+                    type.text = "OptomotoR"
+                else:
+                    type = et.SubElement(period, "type")
+                    type.text = "OptomotoL"
+                duration = et.SubElement(period, "duration")
+                duration.text = str(self.periodbox.get())
+                # outcome = et.SubElement(period, "outcome")
+                # outcome.text = self.outcome
+                pattern = et.SubElement(period, "pattern")
+                pattern.text = str(self.input_Pattern.get())
+
+
+            csv = tree.find("./timeseries/csv_data")  # adress the right spot for the data
+            csv.text = data  # implement the data in the xml
+            tree.write(xml_location)
+
         file.close()
 
-        copy("KHZtext.txt", "AndersSoft") # temporary function
 
     # small function for test time calculus
     def test_time(self):
@@ -639,7 +742,7 @@ class ULAIO01(UIExample):
                     row=curr_row, column=1, sticky=tk.W)
                 initial_value = min(self.ai_props.num_ai_chans - 1, 3)
                 self.input_high_channel_entry.delete(0, tk.END)
-                self.input_high_channel_entry.insert(0, str(initial_value))
+                self.input_high_channel_entry.insert(0, "0")#str(initial_value)
 
 
                 curr_row += 1
@@ -673,6 +776,7 @@ class ULAIO01(UIExample):
                     to=100,
                     increment=1,
                     validate='key', validatecommand=(channel_vcmd, '%P'))
+                self.testtimebox.insert(1, "1")
                 # self.testtimevar = self.testtime # a placeholder of testtime which can be changed
                 self.testtimebox.grid(
                     row=curr_row, column=1, sticky=tk.W)
@@ -754,11 +858,92 @@ class ULAIO01(UIExample):
             self.data_frame = tk.Frame(self.input_inner_data_frame)
             self.data_frame.grid()
 
-            yml_groupbox = tk.LabelFrame(
+
+            ########## METADATA ###########################
+
+            xml_groupbox = tk.LabelFrame(
                 main_frame, text="Metadata")
-            yml_groupbox.pack(side=tk.LEFT, anchor=tk.NW)
+            xml_groupbox.pack(side=tk.LEFT, anchor=tk.NW)
+            curr_row = 0
+
+            label = tk.Label(xml_groupbox, text = "Firstname")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_firstname = tk.Entry(xml_groupbox)
+            self.input_firstname.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_firstname.insert(0, "Maximilian")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Lastname")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_lastname = tk.Entry(xml_groupbox)
+            self.input_lastname.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_lastname.insert(0, "von der Linde")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Flytype")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_flytype = tk.Entry(xml_groupbox)
+            self.input_flytype.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_flytype.insert(0, "control")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Flyname")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_flyname = tk.Entry(xml_groupbox)
+            self.input_flyname.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_flyname.insert(0, "Wildtype Berlin")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Flydescription")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_flydescription = tk.Entry(xml_groupbox)
+            self.input_flydescription.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_flydescription.insert(0, "wildtype")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Experimenttype")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_Optomotor = tk.Entry(xml_groupbox)
+            self.input_Optomotor.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_Optomotor.insert(0, "Optomotor")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Date and Time")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_dateTime = tk.Entry(xml_groupbox)
+            self.input_dateTime.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_dateTime.insert(0, "20018-10-10T15:15:15")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Period Duration")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_duration = tk.Entry(xml_groupbox)
+            self.input_duration.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_duration.insert(30, "30")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Experiment Description and file name")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_ExperimentDescription = tk.Entry(xml_groupbox)
+            self.input_ExperimentDescription.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_ExperimentDescription.insert(0, "Optmo_closedLoop")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Samplingrate(Hz)")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_Samplingrate = tk.Entry(xml_groupbox)
+            self.input_Samplingrate.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_Samplingrate.insert(100, "100")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Pattern(number)")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_Pattern = tk.Entry(xml_groupbox)
+            self.input_Pattern.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_Pattern.insert(4, "4")
 
 
+            ####################### OUTPUT #############################
 
             output_groupbox = tk.LabelFrame(
                 main_frame, text="Analog Output")
@@ -795,11 +980,11 @@ class ULAIO01(UIExample):
             self.data_value_entry = tk.Entry(
                 output_groupbox, validate='key', validatecommand=(float_vcmd, '%P'))
             self.data_value_entry.grid(row=curr_row, column=1, sticky=tk.W)
-            self.data_value_entry.insert(0, "0")
+            self.data_value_entry.insert(3, "3")
 
             update_button = tk.Button(output_groupbox)
             update_button["text"] = "Update"
-            update_button["command"] = self.update_value
+            update_button["command"] = self.update_arena_output
             update_button.grid(row=curr_row, column=2, padx=3, pady=3)
 
 
