@@ -17,12 +17,15 @@ import time as t
 import os as os
 from winsound import Beep
 from shutil import copy, move
+from datetime import datetime
+import sys as sys
+from tkMessageBox import showwarning
 
 class ULAIO01(UIExample):
     def __init__(self, master=None):
         super(ULAIO01, self).__init__(master)
 
-        self.period = 0
+        self.period = 1
         self.period_switch = []
 
         self.tempo = None   # for arena output
@@ -107,6 +110,7 @@ class ULAIO01(UIExample):
         self.update_input_displayed_values(range_)
 
         # Start the arena output
+        self.tempo = 2.5
         self.update_arena_output()
 
 
@@ -156,9 +160,11 @@ class ULAIO01(UIExample):
             self.periodtimevar = self.periodtimevar + self.periodtime
             self.period_switch.append(curr_count) # documentation of period switch
 
-            if self.period == 1:
-                self.tempo = ULAIO01.output_value
-            # self.tempo = self.tempo * -1
+            if self.tempo == 1.5:
+                print("twmpo", self.tempo)
+                self.tempo = 2.5 # make it relative to input!!!!
+            else:
+                self.tempo = 1.5
             self.update_arena_output()
 
     def display_input_values(self, range_, curr_index, curr_count):
@@ -230,7 +236,9 @@ class ULAIO01(UIExample):
             self.board_num, FunctionType.AIFUNCTION)
         if status == status.RUNNING:
             self.full_file()
-        else: self.stop_input()
+        else: # else just stop the arena (whether turning or not)
+            self.tempo = 2
+            self.update_arena_output()
         # self.stop_output()
         self.master.destroy()
 
@@ -242,9 +250,10 @@ class ULAIO01(UIExample):
         data_value = self.get_data_value()
 
         if self.tempo is not None:
-            ULAIO01.output_value = self.tempo
+            ULAIO01.output_value = ul.from_eng_units(self.board_num, ao_range, self.tempo)
         else:
             ULAIO01.output_value = ul.from_eng_units(self.board_num, ao_range, data_value)
+            print(ULAIO01.output_value)
 
         try:
             ul.a_out(self.board_num, channel, ao_range, ULAIO01.output_value)
@@ -253,7 +262,7 @@ class ULAIO01(UIExample):
 
     def get_data_value(self):
         try:
-            return float(self.data_value_entry.get())
+            return float(self.arena_speed_out.get())
         except ValueError:
             return 0
 
@@ -277,172 +286,20 @@ class ULAIO01(UIExample):
 
         return True
 
-    #
-    #
-    # def start_output_scan(self):
-    #     # Build the data array
-    #     self.output_low_chan = self.get_output_low_channel_num()
-    #     self.output_high_chan = self.get_output_high_channel_num()
-    #     self.num_output_chans = (
-    #         self.output_high_chan - self.output_low_chan + 1)
-    #
-    #     if self.output_low_chan > self.output_high_chan:
-    #         messagebox.showerror(
-    #             "Error",
-    #             "Low Channel Number must be greater than or equal to High "
-    #             "Channel Number")
-    #         self.set_ui_idle_state()
-    #         return
-    #
-    #     points_per_channel = 992
-    #     rate = 992
-    #     num_points = self.num_output_chans * points_per_channel
-    #     scan_options = (ScanOptions.BACKGROUND |
-    #                     ScanOptions.CONTINUOUS | ScanOptions.SCALEDATA)
-    #     ao_range = self.ao_props.available_ranges[0]
-    #     print("ao range", ao_range)
-    #
-    #     self.output_memhandle = ul.scaled_win_buf_alloc(num_points)
-    #
-    #     # Check if the buffer was successfully allocated
-    #     if not self.output_memhandle:
-    #         messagebox.showerror("Error", "Failed to allocate memory")
-    #         self.start_button["state"] = tk.NORMAL
-    #         return
-    #
-    #     try:
-    #         data_array = self.memhandle_as_ctypes_array_scaled(
-    #             self.output_memhandle)
-    #         frequencies = self.add_output_example_data(
-    #             data_array, ao_range, self.num_output_chans, rate,
-    #             points_per_channel)
-    #         print("freq", frequencies)
-    #         self.recreate_freq_frame()
-    #         self.display_output_signal_info(frequencies)
-    #
-    #         ul.a_out_scan(
-    #             self.board_num, self.output_low_chan, self.output_high_chan,
-    #             num_points, rate, ao_range, self.output_memhandle,
-    #             scan_options)
-    #
-    #         # Start updating the displayed values
-    #         self.update_output_displayed_values()
-    #     except ULError as e:
-    #         self.show_ul_error(e)
-    #         self.stop_output()
-    #         return
-    #
-    # def display_output_signal_info(self, frequencies):
-    #     for channel_num in range(
-    #             self.output_low_chan, self.output_high_chan + 1):
-    #         curr_row = channel_num - self.output_low_chan
-    #         self.freq_labels[curr_row]["text"] = str(
-    #             frequencies[curr_row]) + " Hz"
-    #
-    # def add_output_example_data(self, data_array, ao_range, num_chans,
-    #                             rate, points_per_channel):
-    #     # Calculate frequencies that will work well with the size of the array
-    #     frequencies = []
-    #     for channel_num in range(0, num_chans):
-    #         frequencies.append(
-    #             (channel_num + 1) / (points_per_channel / rate))
-    #
-    #     # Calculate an amplitude and y-offset for the signal
-    #     # to fill the analog output range
-    #     amplitude = (ao_range.range_max - ao_range.range_min) / 2
-    #     y_offset = (amplitude + ao_range.range_min) / 2
-    #
-    #     # Fill the array with sine wave data at the calculated frequencies.
-    #     # Note that since we are using the SCALEDATA option, the values
-    #     # added to data_array are the actual voltage values that the device
-    #     # will output
-    #     data_index = 0
-    #     for point_num in range(0, points_per_channel):
-    #         for channel_num in range(0, num_chans):
-    #             freq = frequencies[channel_num]
-    #             value = amplitude * math.sin(
-    #                 2 * math.pi * freq * point_num / rate) + y_offset
-    #             data_array[data_index] = value
-    #             data_index += 1
-    #
-    #     print(frequencies)
-    #     return frequencies
-    #
-    # def update_output_displayed_values(self):
-    #     # Get the status from the device
-    #     status, curr_count, curr_index = ul.get_status(
-    #         self.board_num, FunctionType.AOFUNCTION)
-    #
-    #     # Display the status info
-    #     self.update_output_status_labels(status, curr_count, curr_index)
-    #
-    #     # Call this method again until the stop button is pressed
-    #     if status == Status.RUNNING:
-    #         self.after(100, self.update_output_displayed_values)
-    #     else:
-    #         # Free the allocated memory
-    #         ul.win_buf_free(self.output_memhandle)
-    #         self.set_output_ui_idle_state()
-    #
-    # def update_output_status_labels(self, status, curr_count, curr_index):
-    #     if status == Status.IDLE:
-    #         self.output_status_label["text"] = "Idle"
-    #     else:
-    #         self.output_status_label["text"] = "Running"
-    #
-    #     self.output_index_label["text"] = str(curr_index)
-    #     self.output_count_label["text"] = str(curr_count)
-    #
-    # def recreate_freq_frame(self):
-    #     low_chan = self.output_low_chan
-    #     high_chan = self.output_high_chan
-    #
-    #     new_freq_frame = tk.Frame(self.freq_inner_frame)
-    #
-    #     curr_row = 0
-    #     self.freq_labels = []
-    #     for chan_num in range(low_chan, high_chan + 1):
-    #         curr_row += 1
-    #         channel_label = tk.Label(new_freq_frame)
-    #         channel_label["text"] = (
-    #             "Channel " + str(chan_num) + " Frequency:")
-    #         channel_label.grid(row=curr_row, column=0, sticky=tk.W)
-    #
-    #         freq_label = tk.Label(new_freq_frame)
-    #         freq_label.grid(row=curr_row, column=1, sticky=tk.W)
-    #         self.freq_labels.append(freq_label)
-    #
-    #     self.freq_frame.destroy()
-    #     self.freq_frame = new_freq_frame
-    #     self.freq_frame.grid()
-    #
-    # def stop_output(self):
-    #     ul.stop_background(self.board_num, FunctionType.AOFUNCTION)
-    #
-    # def set_output_ui_idle_state(self):
-    #     self.output_high_channel_entry["state"] = tk.NORMAL
-    #     self.output_low_channel_entry["state"] = tk.NORMAL
-    #     self.output_start_button["command"] = self.start_output
-    #     self.output_start_button["text"] = "Start Analog Output"
-    #
-    # def start_output(self):
-    #     self.output_high_channel_entry["state"] = tk.DISABLED
-    #     self.output_low_channel_entry["state"] = tk.DISABLED
-    #     self.output_start_button["command"] = self.stop_output
-    #     self.output_start_button["text"] = "Stop Analog Output"
-    #     self.start_output_scan()
 
     def stop_input(self):
+        self.tempo = 2 # stop turning arena
+        self.update_arena_output()
+
         status, curr_count, curr_index = ul.get_status(
             self.board_num, FunctionType.AIFUNCTION)
-        my_array = self.ctypes_array
+        my_array = self.ctypes_array # save all the collected data
         ul.stop_background(self.board_num, FunctionType.AIFUNCTION)
         open("KHZtext.txt", "w")  # clear existing file
         endfile = open("KHZtext.txt", "a+")  # textfile that the data will be written to (kiloherztext)
         millisec = 0  # the time column parameter in milliseconds
         ULAIO01.txt_count = 0  # for the order of the KHZtext file
-        self.period = 0
-        print("periodsw", self.period_switch)
+        self.period = 1
         print("count", curr_count)
         for i in list(range(0, curr_count)):  # curr_count should represent the length of the ctypes_array
             eng_value = ul.to_eng_units(
@@ -590,12 +447,16 @@ class ULAIO01(UIExample):
         if status == Status.IDLE:
             datafile = open("KHZtext.txt", "r") # text with periods for xml
             data = datafile.read()
-            xml_name = self.input_ExperimentDescription.get() + ".xml"
+            xml_name = self.input_filename.get() + ".xml"
             print(xml_name)
             target_folder = os.path.join(os.curdir, "AndersSoft")
             target_file = os.path.join(target_folder, "Optomotorics_blueprint.xml")
             xml_location = os.path.join(target_folder, xml_name)
             copy("Optomotorics_blueprint.xml", "AndersSoft")
+            if os.path.exists(xml_location):
+                print("warning")
+                showwarning("Warning",
+                            "The specified file already exists, rename the existing one NOW if overwriting should be avoided")
             move(target_file, xml_location)
             tree = et.parse(xml_location)#C:\Bachelor\FinishedSoft\
 
@@ -605,6 +466,9 @@ class ULAIO01(UIExample):
 
             x = tree.find("./metadata/experimenter/lastname")
             x.text = str(self.input_lastname.get())
+
+            x = tree.find("./metadata/experimenter/orcid")
+            x.text = str(self.input_orcid.get())
 
             x = tree.find("./metadata/fly")
             x.attribute = str(self.input_flytype.get())
@@ -622,7 +486,7 @@ class ULAIO01(UIExample):
             x.text = str(self.input_dateTime.get())
 
             x = tree.find("./metadata/experiment/duration")
-            x.text = str(self.input_duration.get())
+            x.text = str(self.periodbox.get())
 
             x = tree.find("./metadata/experiment/description")
             x.text = str(self.input_ExperimentDescription.get())
@@ -673,6 +537,13 @@ class ULAIO01(UIExample):
             tree.write(xml_location)
 
         file.close()
+
+    def restart_program(self): # source: https://www.daniweb.com/programming/software-development/code/260268/restart-your-python-program
+        """Restarts the current program.
+        Note: this function does not return. Any cleanup action (like
+        saving data) must be done before calling this function."""
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
 
 
     # small function for test time calculus
@@ -880,11 +751,18 @@ class ULAIO01(UIExample):
             self.input_lastname.insert(0, "von der Linde")
 
             curr_row += 1
+            label = tk.Label(xml_groupbox, text="orcid ID")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_orcid = tk.Entry(xml_groupbox)
+            self.input_orcid.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_orcid.insert(0, "")
+
+            curr_row += 1
             label = tk.Label(xml_groupbox, text="Flytype")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_flytype = tk.Entry(xml_groupbox)
             self.input_flytype.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_flytype.insert(0, "control")
+            self.input_flytype.insert(0, "control female")
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Flyname")
@@ -912,21 +790,28 @@ class ULAIO01(UIExample):
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_dateTime = tk.Entry(xml_groupbox)
             self.input_dateTime.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_dateTime.insert(0, "20018-10-10T15:15:15")
+            self.input_dateTime.insert(0, datetime.now().isoformat()) # display current datetime
+
+            # curr_row += 1
+            # label = tk.Label(xml_groupbox, text="Period Duration")
+            # label.grid(row=curr_row, column=1, sticky=tk.W)
+            # self.input_duration = tk.Entry(xml_groupbox)
+            # self.input_duration.grid(row=curr_row, column=2, sticky=tk.W)
+            # self.input_duration.insert(20, "20")
 
             curr_row += 1
-            label = tk.Label(xml_groupbox, text="Period Duration")
-            label.grid(row=curr_row, column=1, sticky=tk.W)
-            self.input_duration = tk.Entry(xml_groupbox)
-            self.input_duration.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_duration.insert(30, "30")
-
-            curr_row += 1
-            label = tk.Label(xml_groupbox, text="Experiment Description and file name")
+            label = tk.Label(xml_groupbox, text="Experiment Description")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_ExperimentDescription = tk.Entry(xml_groupbox)
             self.input_ExperimentDescription.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_ExperimentDescription.insert(0, "Optmo_closedLoop")
+            self.input_ExperimentDescription.insert(0, "Optmototorics on platform (open loop)")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="File Name")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_filename = tk.Entry(xml_groupbox)
+            self.input_filename.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_filename.insert(0, "Optmoto_B")
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Samplingrate(Hz)")
@@ -967,117 +852,35 @@ class ULAIO01(UIExample):
                     validate='key', validatecommand=(channel_vcmd, '%P'))
                 self.channel_entry.grid(
                     row=curr_row, column=1, sticky=tk.W)
+                self.channel_entry.insert(1, "1")
+                self.channel_entry["state"] = tk.DISABLED
 
                 curr_row += 1
 
             units_text = self.ao_props.get_units_string(
                 self.ao_props.available_ranges[0])
-            value_label_text = "Value (" + units_text + "):"
+            # value_label_text = "Value (" + units_text + "):"
+            value_label_text = "Arena Speed:"
             data_value_label = tk.Label(output_groupbox)
             data_value_label["text"] = value_label_text
             data_value_label.grid(row=curr_row, column=0, sticky=tk.W)
+            #
+            # self.data_value_entry = tk.Entry(
+            #     output_groupbox, validate='key', validatecommand=(float_vcmd, '%P'))
+            # self.data_value_entry.grid(row=curr_row, column=1, sticky=tk.W)
+            # self.data_value_entry.insert(2, "2")
 
-            self.data_value_entry = tk.Entry(
-                output_groupbox, validate='key', validatecommand=(float_vcmd, '%P'))
-            self.data_value_entry.grid(row=curr_row, column=1, sticky=tk.W)
-            self.data_value_entry.insert(3, "3")
+            self.arena_speed_out = tk.StringVar(output_groupbox)
+            self.arena_speed_out.set("slow")
+            self.arena_speed_out_options = tk.OptionMenu(
+                output_groupbox, self.arena_speed_out, "very slow", "slow", "medium")
+            self.arena_speed_out_options.grid(row=curr_row, column=1, sticky=tk.W)
+
 
             update_button = tk.Button(output_groupbox)
             update_button["text"] = "Update"
             update_button["command"] = self.update_arena_output
             update_button.grid(row=curr_row, column=2, padx=3, pady=3)
-
-
-            # # if self.ao_props.num_chans > 1:
-            # #     curr_row = 0
-            # #     output_channels_frame = tk.Frame(output_groupbox)
-            # #     output_channels_frame.pack(fill=tk.X, anchor=tk.NW)
-            # #
-            # #     output_low_channel_entry_label = tk.Label(
-            # #         output_channels_frame)
-            # #     output_low_channel_entry_label["text"] = (
-            # #         "Low Channel Number:")
-            # #     output_low_channel_entry_label.grid(
-            # #         row=curr_row, column=0, sticky=tk.W)
-            # #
-            # #     self.output_low_channel_entry = tk.Spinbox(
-            # #         output_channels_frame, from_=0,
-            # #         to=max(self.ao_props.num_chans - 1, 0),
-            # #         validate='key', validatecommand=(channel_vcmd, '%P'))
-            # #     self.output_low_channel_entry.grid(
-            # #         row=curr_row, column=1, sticky=tk.W)
-            # #
-            # #     curr_row += 1
-            # #     output_high_channel_entry_label = tk.Label(
-            # #         output_channels_frame)
-            # #     output_high_channel_entry_label["text"] = (
-            # #         "High Channel Number:")
-            # #     output_high_channel_entry_label.grid(
-            # #         row=curr_row, column=0, sticky=tk.W)
-            # #
-            # #     self.output_high_channel_entry = tk.Spinbox(
-            # #         output_channels_frame, from_=0,
-            # #         to=max(self.ao_props.num_chans - 1, 0),
-            # #         validate='key', validatecommand=(channel_vcmd, '%P'))
-            # #     self.output_high_channel_entry.grid(
-            # #         row=curr_row, column=1, sticky=tk.W)
-            # #     initial_value = min(self.ao_props.num_chans - 1, 3)
-            # #     self.output_high_channel_entry.delete(0, tk.END)
-            # #     self.output_high_channel_entry.insert(0, str(initial_value))
-            #
-            # self.output_start_button = tk.Button(output_groupbox)
-            # self.output_start_button["text"] = "Start Analog Output"
-            # self.output_start_button["command"] = self.start_output
-            # self.output_start_button.pack(
-            #     fill=tk.X, anchor=tk.NW, padx=3, pady=3)
-            #
-            # output_scan_info_group = tk.LabelFrame(
-            #     output_groupbox, text="Scan Information", padx=3, pady=3)
-            # output_scan_info_group.pack(
-            #     fill=tk.X, anchor=tk.NW, padx=3, pady=3)
-            #
-            # output_scan_info_group.grid_columnconfigure(1, weight=1)
-            #
-            # curr_row = 0
-            # output_status_left_label = tk.Label(output_scan_info_group)
-            # output_status_left_label["text"] = "Status:"
-            # output_status_left_label.grid(
-            #     row=curr_row, column=0, sticky=tk.W)
-            #
-            # self.output_status_label = tk.Label(output_scan_info_group)
-            # self.output_status_label["text"] = "Idle"
-            # self.output_status_label.grid(
-            #     row=curr_row, column=1, sticky=tk.W)
-            #
-            # curr_row += 1
-            # output_index_left_label = tk.Label(output_scan_info_group)
-            # output_index_left_label["text"] = "Index:"
-            # output_index_left_label.grid(
-            #     row=curr_row, column=0, sticky=tk.W)
-            #
-            # self.output_index_label = tk.Label(output_scan_info_group)
-            # self.output_index_label["text"] = "-1"
-            # self.output_index_label.grid(
-            #     row=curr_row, column=1, sticky=tk.W)
-            #
-            # curr_row += 1
-            # output_count_left_label = tk.Label(output_scan_info_group)
-            # output_count_left_label["text"] = "Count:"
-            # output_count_left_label.grid(
-            #     row=curr_row, column=0, sticky=tk.W)
-            #
-            # self.output_count_label = tk.Label(output_scan_info_group)
-            # self.output_count_label["text"] = "0"
-            # self.output_count_label.grid(
-            #     row=curr_row, column=1, sticky=tk.W)
-            #
-            # curr_row += 1
-            # self.freq_inner_frame = tk.Frame(output_scan_info_group)
-            # self.freq_inner_frame.grid(
-            #     row=curr_row, column=0, columnspan=2, sticky=tk.W)
-            #
-            # self.freq_frame = tk.Frame(self.freq_inner_frame)
-            # self.freq_frame.grid()
 
             button_frame = tk.Frame(self)
             button_frame.pack(fill=tk.X, side=tk.RIGHT, anchor=tk.SE)
@@ -1085,7 +888,12 @@ class ULAIO01(UIExample):
             self.quit_button = tk.Button(button_frame)
             self.quit_button["text"] = "Quit"
             self.quit_button["command"] = self.exit
-            self.quit_button.grid(row=0, column=1, padx=3, pady=3)
+            self.quit_button.grid(row=0, column=2, padx=3, pady=3)
+
+            self.restart_button = tk.Button(button_frame)
+            self.restart_button["text"] = "Restart"
+            self.restart_button["command"] = self.restart_program
+            self.restart_button.grid(row=0, column=1, padx=3, pady=3)
         else:
             self.create_unsupported_widgets(self.board_num)
 
