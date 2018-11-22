@@ -110,7 +110,7 @@ class ULAIO01(UIExample):
         self.update_input_displayed_values(range_)
 
         # Start the arena output
-        self.tempo = 2.5
+        self.tempo = 2.2
         self.update_arena_output()
 
 
@@ -160,11 +160,11 @@ class ULAIO01(UIExample):
             self.periodtimevar = self.periodtimevar + self.periodtime
             self.period_switch.append(curr_count) # documentation of period switch
 
-            if self.tempo == 1.5:
+            if self.tempo == 1.8:
                 print("twmpo", self.tempo)
-                self.tempo = 2.5 # make it relative to input!!!!
+                self.tempo = 2.2 # make it relative to input!!!!
             else:
-                self.tempo = 1.5
+                self.tempo = 1.8
             self.update_arena_output()
 
     def display_input_values(self, range_, curr_index, curr_count):
@@ -310,7 +310,7 @@ class ULAIO01(UIExample):
                 "unicode-escape"))  # eng_value returns float, but after (4) floats all channels are printed (also: encode to utf8 format)
             ULAIO01.txt_count = ULAIO01.txt_count + 1  # thats why we need the count (know when to newline)
             if self.period < len(self.period_switch) and i == self.period_switch[
-                self.period]:  # when we iterated to the point where a new period was started, we need to switch the period parameter
+                self.period-1]:  # when we iterated to the point where a new period was started, we need to switch the period parameter
                 self.period = self.period + 1
                 print("hat funktioniert", self.period)
             if ULAIO01.txt_count == ((self.input_high_chan - self.input_low_chan) + 1):
@@ -526,8 +526,8 @@ class ULAIO01(UIExample):
                     type.text = "OptomotoL"
                 duration = et.SubElement(period, "duration")
                 duration.text = str(self.periodbox.get())
-                # outcome = et.SubElement(period, "outcome")
-                # outcome.text = self.outcome
+                outcome = et.SubElement(period, "outcome")
+                outcome.text = str(self.input_outcome.get())
                 pattern = et.SubElement(period, "pattern")
                 pattern.text = str(self.input_Pattern.get())
 
@@ -755,7 +755,7 @@ class ULAIO01(UIExample):
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_orcid = tk.Entry(xml_groupbox)
             self.input_orcid.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_orcid.insert(0, "")
+            self.input_orcid.insert(0, "https://orcid.org/0000-0002-4016-4240")
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Flytype")
@@ -819,6 +819,13 @@ class ULAIO01(UIExample):
             self.input_Samplingrate = tk.Entry(xml_groupbox)
             self.input_Samplingrate.grid(row=curr_row, column=2, sticky=tk.W)
             self.input_Samplingrate.insert(100, "100")
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Outcome (number)")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_outcome = tk.Entry(xml_groupbox)
+            self.input_outcome.grid(row=curr_row, column=2, sticky=tk.W)
+            self.input_outcome.insert(0, "0")
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Pattern(number)")
