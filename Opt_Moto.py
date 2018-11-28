@@ -486,7 +486,7 @@ class ULAIO01(UIExample):
             x.text = str(self.input_dateTime.get())
 
             x = tree.find("./metadata/experiment/duration")
-            x.text = str(self.periodbox.get())
+            x.text = str(self.testtimebox.get())
 
             x = tree.find("./metadata/experiment/description")
             x.text = str(self.input_ExperimentDescription.get())

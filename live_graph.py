@@ -12,8 +12,9 @@ from matplotlib import style
 style.use("fivethirtyeight")
 
 fig = plt.figure()
-ax1 = fig.add_subplot(2, 1, 1)
-ax2 = fig.add_subplot(2, 1, 2)
+ax1 = fig.add_subplot(3, 1, 1)
+ax2 = fig.add_subplot(3, 1, 2)
+ax3 = fig.add_subplot(3, 1, 3)
 
 def animate(i):
 
@@ -28,7 +29,7 @@ def animate(i):
         x = x+1
         xs.append(float(x))
         ys.append(float(y))
-        if x > 150:
+        if x > 500:
             del ys[0]
             del xs[0]
 
@@ -36,7 +37,7 @@ def animate(i):
     ax1.set_title("Channel 1 / Fly Position")
     ax1.set_ylabel("V")
     ax1.plot(xs, ys)
-    ax1.set_ylim(0, 2.5)
+    ax1.set_ylim(-0.5, -3)
 
     xs2 = []
     ys2 =[]
@@ -56,7 +57,27 @@ def animate(i):
     ax2.set_ylabel("V")
     ax2.set_xlabel("count")
     ax2.plot(xs2, ys2)
-    ax2.set_ylim(-4, 1, auto=False)
+    ax2.set_ylim(-5, 1, auto=False)
+
+    xs3 = []
+    ys3 =[]
+    x3 = 0
+    for line3 in lines[:-1]:
+        datapoints3 = line3.split(" ")
+        y3 = datapoints3[2]
+        x3 = x3+1
+        xs3.append(float(x3))
+        ys3.append(float(y3))
+        if x3 > 500:
+            del ys3[0]
+            del xs3[0]
+
+    ax3.clear()
+    ax3.set_title("Channel 3 / Arena Position", )
+    ax3.set_ylabel("V")
+    ax3.set_xlabel("count")
+    ax3.plot(xs3, ys3)
+    ax3.set_ylim(-5, 1, auto=False)
 
 
 ani = animation.FuncAnimation(fig, animate, interval=10)
