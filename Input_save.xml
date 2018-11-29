@@ -1,0 +1,20 @@
+<save_xml>
+<input>
+	<firstname>Maximilian</firstname>
+	<lastname>von der Linde</lastname>
+	<orcid>https://orcid.org/0000-0002-4016-4240</orcid>
+	<flytype>control female</flytype>
+	<flyname>Wildtype Berlin X</flyname>
+	<flydescription>wildtype</flydescription>
+	<experimenttype>Platform Optomotor</experimenttype>
+	<experimentdescription>"Optmototorics on platform (open loop)"</experimentdescription>
+	<filename>Optomoto_X</filename>
+	<samplingrate>100</samplingrate>
+	<outcome>0</outcome>
+	<pattern>4</pattern>
+	<lowchan>0</lowchan>
+	<highchan>1</highchan>
+	<periodtime>30</periodtime>
+	<testtime>8</testtime>
+</input>
+</save_xml>

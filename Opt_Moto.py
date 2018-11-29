@@ -239,15 +239,48 @@ class ULAIO01(UIExample):
         else: # else just stop the arena (whether turning or not)
             self.tempo = 2
             self.update_arena_output()
-        # self.stop_output()
+        self.save_inputs()
         self.master.destroy()
 
+    def save_inputs(self):
+        self.save_firstname.text = str(self.input_firstname.get())
 
+        self.save_lastname.text = str(self.input_lastname.get())
+
+        self.save_orcid.text = str(self.input_orcid.get())
+
+        self.save_flytype.text = str(self.input_flytype.get())
+
+        self.save_flyname.text = str(self.input_flyname.get())
+
+        self.save_flydescription.text = str(self.input_flydescription.get())
+
+        self.save_experimenttype.text = str(self.input_experimenttype.get())
+
+        self.save_experimentdescription.text = str(self.input_ExperimentDescription.get())
+
+        self.save_filename.text = str(self.input_filename.get())
+
+        self.save_samplingrate.text = str(self.input_Samplingrate.get())
+
+        self.save_outcome.text = str(self.input_outcome.get())
+
+        self.save_pattern.text = str(self.input_Pattern.get())
+
+        self.save_lowchan.text = str(self.input_low_channel_entry.get())
+
+        self.save_highchan.text = str(self.input_high_channel_entry.get())
+
+        self.save_periodtime.text = str(self.periodbox.get())
+
+        self.save_testtime.text = str(self.testtimebox.get())
+
+        self.save_tree.write("Input_save.xml")
 
     def update_arena_output(self):
         channel = self.get_channel_num()
         ao_range = self.ao_props.available_ranges[0]
-        data_value = self.get_data_value()
+        data_value = self.get_speed()
 
         if self.tempo is not None:
             ULAIO01.output_value = ul.from_eng_units(self.board_num, ao_range, self.tempo)
@@ -260,11 +293,11 @@ class ULAIO01(UIExample):
         except ULError as e:
             self.show_ul_error(e)
 
-    def get_data_value(self):
+    def get_speed(self):
         try:
             return float(self.arena_speed_out.get())
         except ValueError:
-            return 0
+            return 2 # 2 will put the arena to rest
 
     def get_channel_num(self):
         if self.ao_props.num_chans == 1:
@@ -460,60 +493,44 @@ class ULAIO01(UIExample):
             move(target_file, xml_location)
             tree = et.parse(xml_location)#C:\Bachelor\FinishedSoft\
 
-            x = tree.find("./metadata/experimenter/firstname")
-            x.text = str(self.input_firstname.get())
-            print(x.text)
+            self.firstname = tree.find("./metadata/experimenter/firstname")
+            self.firstname.text = str(self.input_firstname.get())
 
-            x = tree.find("./metadata/experimenter/lastname")
-            x.text = str(self.input_lastname.get())
+            self.lastname = tree.find("./metadata/experimenter/lastname")
+            self.lastname.text = str(self.input_lastname.get())
 
-            x = tree.find("./metadata/experimenter/orcid")
-            x.text = str(self.input_orcid.get())
+            self.orcid = tree.find("./metadata/experimenter/orcid")
+            self.orcid.text = str(self.input_orcid.get())
 
-            x = tree.find("./metadata/fly")
-            x.attribute = str(self.input_flytype.get())
+            self.fly = tree.find("./metadata/fly")
+            self.fly.attribute = str(self.input_flytype.get())
 
-            x = tree.find("./metadata/fly/name")
-            x.text = str(self.input_flyname.get())
+            self.fly_name = tree.find("./metadata/fly/name")
+            self.fly_name.text = str(self.input_flyname.get())
 
-            x = tree.find("./metadata/fly/description")
-            x.text = str(self.input_flydescription.get())
+            self.fly_description = tree.find("./metadata/fly/description")
+            self.fly_description.text = str(self.input_flydescription.get())
 
             # x = tree.find("./metadata/experiment")
             # x.attribute = str(self.input_experimenttype
 
-            x = tree.find("./metadata/experiment/dateTime")
-            x.text = str(self.input_dateTime.get())
+            self.experiment_dateTime = tree.find("./metadata/experiment/dateTime")
+            self.experiment_dateTime.text = str(self.input_dateTime.get())
 
-            x = tree.find("./metadata/experiment/duration")
-            x.text = str(self.testtimebox.get())
+            self.experiment_duration = tree.find("./metadata/experiment/duration")
+            self.experiment_duration.text = str(self.testtimebox.get())
 
-            x = tree.find("./metadata/experiment/description")
-            x.text = str(self.input_ExperimentDescription.get())
+            self.experiment_description = tree.find("./metadata/experiment/description")
+            self.experiment_description.text = str(self.input_ExperimentDescription.get())
 
-            x = tree.find("./metadata/experiment/sample_rate")
-            x.text = str(self.input_Samplingrate.get())
+            self.sample_rate = tree.find("./metadata/experiment/sample_rate")
+            self.sample_rate.text = str(self.input_Samplingrate.get())
 
             self.sequences = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get())) + 1
             sequence = tree.find("./sequence")
             sequence.attribute = self.sequences
 
             # perioddescription
-            # for period in sequence:
-            #     if period.attribute > self.sequences:
-            #         sequence.remove(period)
-            #     if period.attribute % 2 == 0:
-            #         type = et.SubElement(period, "type")
-            #         type.text = "OptomotoR"
-            #     else:
-            #         type = et.SubElement(period, "type")
-            #         type.text = "OptomotoL"
-            #     duration = et.SubElement(period, "duration")
-            #     duration.text = self.periodtime
-            #     outcome = et.SubElement(period, "outcome")
-            #     outcome.text = self.outcome
-            #     pattern = et.SubElement(period, "pattern")
-            #     pattern.text = self.pattern
             for i in list(range(1, self.sequences)):
                 period = et.SubElement(sequence, "period")
                 period.set("number", "%d" %i)
@@ -568,6 +585,9 @@ class ULAIO01(UIExample):
             and self.ai_props.supports_scan)
 
         if example_supported:
+            self.save_tree = et.parse("Input_save.xml") # load the latest input
+            print(self.save_tree.find("./input/firstname"), "save")
+
             channel_vcmd = self.register(self.validate_channel_entry)
 
             main_frame = tk.Frame(self)
@@ -593,6 +613,9 @@ class ULAIO01(UIExample):
                     input_channels_frame, from_=0,
                     to=max(self.ai_props.num_ai_chans - 1, 0),
                     validate='key', validatecommand=(channel_vcmd, '%P'))
+                self.save_lowchan = self.save_tree.find("./input/lowchan") # load latest input
+                self.input_low_channel_entry.delete(0, tk.END) # clear the entry
+                self.input_low_channel_entry.insert(int(self.save_lowchan.text), self.save_lowchan.text)
                 self.input_low_channel_entry.grid(
                     row=curr_row, column=1, sticky=tk.W)
 
@@ -607,13 +630,12 @@ class ULAIO01(UIExample):
                 self.input_high_channel_entry = tk.Spinbox(
                     input_channels_frame, from_=0,
                     to=max(self.ai_props.num_ai_chans - 1, 0),
-                    textvariable="1",
                     validate='key', validatecommand=(channel_vcmd, '%P'))
+                self.save_highchan = self.save_tree.find("./input/highchan") # load latest input
+                self.input_high_channel_entry.delete(0, tk.END) # clear the entry
+                self.input_high_channel_entry.insert(int(self.save_highchan.text), self.save_highchan.text)
                 self.input_high_channel_entry.grid(
                     row=curr_row, column=1, sticky=tk.W)
-                initial_value = min(self.ai_props.num_ai_chans - 1, 3)
-                self.input_high_channel_entry.delete(0, tk.END)
-                self.input_high_channel_entry.insert(0, "0")#str(initial_value)
 
 
                 curr_row += 1
@@ -630,6 +652,9 @@ class ULAIO01(UIExample):
                     to=500,
                     increment=5,
                     validate='key', validatecommand=(channel_vcmd, '%P'))
+                self.save_periodtime = self.save_tree.find("./input/periodtime") # load latest input
+                self.periodbox.delete(0, tk.END) # clear the entry
+                self.periodbox.insert(int(self.save_periodtime.text), self.save_periodtime.text)
                 self.periodbox.grid(
                     row=curr_row, column=1, sticky=tk.W)
 
@@ -646,9 +671,10 @@ class ULAIO01(UIExample):
                     from_=0,
                     to=100,
                     increment=1,
-                    validate='key', validatecommand=(channel_vcmd, '%P'))
-                self.testtimebox.insert(1, "1")
-                # self.testtimevar = self.testtime # a placeholder of testtime which can be changed
+                    validate='key')
+                self.save_testtime = self.save_tree.find("./input/testtime") # load latest input
+                self.testtimebox.delete(0, tk.END) # clear the entry
+                self.testtimebox.insert(int(self.save_testtime.text), self.save_testtime.text)
                 self.testtimebox.grid(
                     row=curr_row, column=1, sticky=tk.W)
 
@@ -741,49 +767,56 @@ class ULAIO01(UIExample):
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_firstname = tk.Entry(xml_groupbox)
             self.input_firstname.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_firstname.insert(0, "Maximilian")
+            self.save_firstname = self.save_tree.find("./input/firstname") # load the latest input
+            self.input_firstname.insert(0, self.save_firstname.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Lastname")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_lastname = tk.Entry(xml_groupbox)
             self.input_lastname.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_lastname.insert(0, "von der Linde")
+            self.save_lastname = self.save_tree.find("./input/lastname") # load the latest input
+            self.input_lastname.insert(0, self.save_lastname.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="orcid ID")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_orcid = tk.Entry(xml_groupbox)
             self.input_orcid.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_orcid.insert(0, "https://orcid.org/0000-0002-4016-4240")
+            self.save_orcid = self.save_tree.find("./input/orcid") # load the latest input
+            self.input_orcid.insert(0, self.save_orcid.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Flytype")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_flytype = tk.Entry(xml_groupbox)
             self.input_flytype.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_flytype.insert(0, "control female")
+            self.save_flytype = self.save_tree.find("./input/flytype") # load the latest input
+            self.input_flytype.insert(0, self.save_flytype.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Flyname")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_flyname = tk.Entry(xml_groupbox)
             self.input_flyname.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_flyname.insert(0, "Wildtype Berlin")
+            self.save_flyname = self.save_tree.find("./input/flyname") # load the latest input
+            self.input_flyname.insert(0, self.save_flyname.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Flydescription")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_flydescription = tk.Entry(xml_groupbox)
             self.input_flydescription.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_flydescription.insert(0, "wildtype")
+            self.save_flydescription = self.save_tree.find("./input/flydescription") # load the latest input
+            self.input_flydescription.insert(0, self.save_flydescription.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Experimenttype")
             label.grid(row=curr_row, column=1, sticky=tk.W)
-            self.input_Optomotor = tk.Entry(xml_groupbox)
-            self.input_Optomotor.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_Optomotor.insert(0, "Optomotor")
+            self.input_experimenttype = tk.Entry(xml_groupbox)
+            self.input_experimenttype.grid(row=curr_row, column=2, sticky=tk.W)
+            self.save_experimenttype = self.save_tree.find("./input/experimenttype") # load the latest input
+            self.input_experimenttype.insert(0, self.save_experimenttype.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Date and Time")
@@ -804,36 +837,40 @@ class ULAIO01(UIExample):
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_ExperimentDescription = tk.Entry(xml_groupbox)
             self.input_ExperimentDescription.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_ExperimentDescription.insert(0, "Optmototorics on platform (open loop)")
+            self.save_experimentdescription = self.save_tree.find("./input/experimentdescription") # load the latest input
+            self.input_ExperimentDescription.insert(0, self.save_experimentdescription.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="File Name")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_filename = tk.Entry(xml_groupbox)
             self.input_filename.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_filename.insert(0, "Optmoto_B")
+            self.save_filename = self.save_tree.find("./input/filename") # load the latest input
+            self.input_filename.insert(0, self.save_filename.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Samplingrate(Hz)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_Samplingrate = tk.Entry(xml_groupbox)
             self.input_Samplingrate.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_Samplingrate.insert(100, "100")
+            self.save_samplingrate = self.save_tree.find("./input/samplingrate") # load the latest input
+            self.input_Samplingrate.insert(int(self.save_samplingrate.text), self.save_samplingrate.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Outcome (number)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_outcome = tk.Entry(xml_groupbox)
             self.input_outcome.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_outcome.insert(0, "0")
+            self.save_outcome = self.save_tree.find("./input/outcome") # load the latest input
+            self.input_outcome.insert(int(self.save_outcome.text), self.save_outcome.text)
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Pattern(number)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_Pattern = tk.Entry(xml_groupbox)
             self.input_Pattern.grid(row=curr_row, column=2, sticky=tk.W)
-            self.input_Pattern.insert(4, "4")
-
+            self.save_pattern = self.save_tree.find("./input/pattern") # load the latest input
+            self.input_Pattern.insert(int(self.save_pattern.text), self.save_pattern.text)
 
             ####################### OUTPUT #############################
 
