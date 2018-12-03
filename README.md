@@ -15,3 +15,14 @@ For further information on the topic see my Bachelor Thesis " " (LINK)
 - takes data from rawdata.txt, stores it and shows at most 150 datapoints from the fly position and at most 500 datapoints from the arena position
 - uses that data to plot the before mentioned live graph
 - can be called by pressing a button on the Opt_Moto.py UI
+
+3. easy_plot.R:
+- early version of data evaluation
+- used for experimentation with the data to find plots that should be implemented in the main evaluation program (https://github.com/brembslab/DTSevaluations.git)
+
+INSTALLATION
+1. Install the “MCC Universal Library Python API for Windows” from Github (https://github.com/mccdaq/mcculw.git) and follow the installation instructions in the readme file.
+2. Download the files from this repository (the easy_plot programs are optional)
+3. Save them all in the same folder (important!) and in the same drive as the Universal Library from MCC and Python
+4. Use the pip install command in the Windows command center to install all the packages needed in the programs: tkinter, etree, os, winsoud, shutil, datetime, sys, tkMessageBox, matplotlib
+5. 
