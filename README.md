@@ -22,7 +22,7 @@ For further information on the topic see my Bachelor Thesis " " (LINK)
 
 INSTALLATION
 1. Install the “MCC Universal Library Python API for Windows” from Github (https://github.com/mccdaq/mcculw.git) and follow the installation instructions in the readme file.
-2. Download the files from this repository (the easy_plot programs are optional)
-3. Save them all in the same folder (important!) and in the same drive as the Universal Library from MCC and Python
-4. Use the pip install command in the Windows command center to install all the packages needed in the programs: tkinter, etree, os, winsoud, shutil, datetime, sys, tkMessageBox, matplotlib
-5. 
+2. Download the files from this repository (the easy_plot programs are optional).
+3. Save them all in the same folder (important!) and in the same drive as the Universal Library from MCC and Python.
+4. Use the pip install command in the Windows command center to install all the packages needed in the programs: tkinter, etree, os, winsoud, shutil, datetime, sys, tkMessageBox, matplotlib, pycompile
+5. To be able to call the live graph, live_graph.py first has to be compiled. Just run setup.py and this should be resolved.
