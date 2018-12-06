@@ -6,7 +6,6 @@ For further information on the topic see my Bachelor Thesis " " (LINK)
 3 primary programs:
 1. Opt_Moto.py: 
 - modified version of the ULAIO01.py program from the mcculw library
-- 
 - succedes in writing some of the input directly to a text document called "rawtext.txt" in real time, which can be used by the following program for live real time plotting
 - writes a more accurate list of the collected data at the end of one run to "KHZtext.txt" and then to a user specified xml document
 - The UI allows the user to control the experiment and specify the metadata to then create a xml file which can be used for further examination
@@ -21,7 +20,7 @@ For further information on the topic see my Bachelor Thesis " " (LINK)
 - used for experimentation with the data to find plots that should be implemented in the main evaluation program (https://github.com/brembslab/DTSevaluations.git)
 
 INSTALLATION
-1. Install the “MCC Universal Library Python API for Windows” from Github (https://github.com/mccdaq/mcculw.git) and follow the installation instructions in the readme file.
+1. Install the “MCC Universal Library Python API for Windows” from Github (https://github.com/mccdaq/mcculw.git) and follow the installation instructions in the readme file. Please follow the instructions for Python 2.7.
 2. Download the files from this repository (the easy_plot programs are optional).
 3. Save them all in the same folder (important!) and in the same drive as the Universal Library from MCC and Python.
 4. Use the pip install command in the Windows command center to install all the packages needed in the programs: tkinter, etree, os, winsoud, shutil, datetime, sys, tkMessageBox, matplotlib, pycompile
