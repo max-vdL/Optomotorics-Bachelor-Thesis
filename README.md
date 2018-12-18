@@ -27,6 +27,7 @@ INSTALLATION
 5. To be able to call the live graph, live_graph.py first has to be compiled. Just run setup.py and this should be resolved.
 
 UI DOCUMENTATION
+
 Analog Input:
 - Low Channel Number represents the first channel of the A/D converter that should be taken into account. In the existing setup Channel 0 is the fly’s signal.
 - High Channel Number represents the last channel of the A/D converter that should be taken into account. In the existing setup Channel 1 is the arena position signal. If Channel 2 would be added, the arena speed should be measured additionally.
