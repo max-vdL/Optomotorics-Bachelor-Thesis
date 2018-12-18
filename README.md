@@ -38,6 +38,7 @@ Analog Input:
 - Period depicts which period has been reached in the time series.
 - Index depicts number of data points that have been acquired so far.
 - Count depicts number of data points that have been acquired so far.
+
 Metadata:
 - Firstname of the experimenter
 - Lastname of the experimenter
