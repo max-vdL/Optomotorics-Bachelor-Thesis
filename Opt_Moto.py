@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import math
-
+import shutil
 from builtins import *  # @UnusedWildImport
 from mcculw import ul
 from mcculw.enums import ScanOptions, Status, FunctionType
@@ -483,9 +483,11 @@ class ULAIO01(UIExample):
             xml_name = self.input_filename.get() + ".xml"
             print(xml_name)
             target_folder = os.path.join(os.curdir, "AndersSoft")
-            target_file = os.path.join(target_folder, "Optomotorics_blueprint.xml")
+
+            shutil.copyfile("Optomotorics_blueprint.xml","Optomotorics_blueprint.xml2")
+            target_file = os.path.join(target_folder, "Optomotorics_blueprint2.xml")
             xml_location = os.path.join(target_folder, xml_name)
-            copy("Optomotorics_blueprint.xml", "AndersSoft")
+            copy("Optomotorics_blueprint2.xml", "AndersSoft")
             if os.path.exists(xml_location):
                 print("warning")
                 showwarning("Warning",
