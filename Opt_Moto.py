@@ -518,7 +518,7 @@ class ULAIO01(UIExample):
             self.experiment_dateTime.text = str(self.input_dateTime.get())
 
             self.experiment_duration = tree.find("./metadata/experiment/duration")
-            self.experiment_duration.text = str(self.testtimebox.get())
+            self.experiment_duration.text = str(self.durationtime())
 
             self.experiment_description = tree.find("./metadata/experiment/description")
             self.experiment_description.text = str(self.input_ExperimentDescription.get())
@@ -537,10 +537,10 @@ class ULAIO01(UIExample):
                 print(et.tostring(period))
                 if i % 2 == 0:
                     type = et.SubElement(period, "type")
-                    type.text = "OptomotoR"
+                    type.text = "OptomotorR"
                 else:
                     type = et.SubElement(period, "type")
-                    type.text = "OptomotoL"
+                    type.text = "OptomotorL"
                 duration = et.SubElement(period, "duration")
                 duration.text = str(self.periodbox.get())
                 outcome = et.SubElement(period, "outcome")
@@ -570,6 +570,11 @@ class ULAIO01(UIExample):
         while self.testtime % 31 != 0:  # the variable has to be divisible by 31 (COUNTINOUS mode restriction)
             self.testtime += 1
         return self.testtime
+
+    def duration_time(self):
+        self.durationtime =60 * int(self.testtimebox.get())  # Multiply the total duration with 60 to get seconds.
+        # Will be used later to fill the xml sheet.
+        return self.durationtime
 
     def give_curr_count(self):
         status, curr_count, curr_index = ul.get_status(
