@@ -22,7 +22,7 @@
 		<duration></duration>
 		<description></description>
 		<sample_rate></sample_rate>
-		<arena_type>motor</arena_type>
+		<arena_type>Joystick</arena_type>
 		<meter_type></meter_type>
 	</experiment>
 </metadata>
@@ -36,12 +36,12 @@
 	</CSV_descriptor>
 	<variables>
 		<variable number="1">
-		    <type>fly</type>		
+		    <type>j_pos</type>		
 			<var_type>float32</var_type>
 			<unit>arb_unit</unit>
 		</variable>	
 		<variable number="2">
-		    <type>arena</type>		
+		    <type>a_pos</type>		
 			<var_type>float32</var_type>
 			<unit>arb_unit</unit>
 		</variable>
