@@ -26,7 +26,9 @@ class ULAIO01(UIExample):
         super(ULAIO01, self).__init__(master)
 
         self.period = 1
+        self.time = 1
         self.period_switch = []
+        self.time_switch = []
 
         self.tempo = None   # for arena output
 
@@ -45,6 +47,8 @@ class ULAIO01(UIExample):
 
         self.periodtime = int(self.periodbox.get())  # variable of the duration in sec
         self.periodtimevar = self.periodtime  # a placeholder of periodtime which can be changed
+        self.timeclock = 1
+        self.timevar = self.timeclock
 
         if self.input_low_chan > self.input_high_chan:
             messagebox.showerror(
@@ -150,8 +154,17 @@ class ULAIO01(UIExample):
             self.input_status_label["text"] = "Running"
 
         self.input_period_label["text"] = self.period
-        self.input_index_label["text"] = str(curr_index)
-        self.input_count_label["text"] = str(curr_count)
+        self.input_time_label["text"] = self.time
+        self.input_index_label["text"] = "Running"
+        self.input_count_label["text"] = "Running"
+
+    def update_input_time(self, curr_count):
+        if t.clock() > self.timevar:
+            # Beep(2000, 500)
+            self.time += 1 # switch to next period
+            self.timevar = self.timevar + self.timeclock
+            self.time_switch.append(curr_count) # documentation of period switch
+            self.update_arena_output()
 
     def update_input_period(self, curr_count):
         if t.clock() > self.periodtimevar:
@@ -333,6 +346,7 @@ class ULAIO01(UIExample):
         millisec = 0  # the time column parameter in milliseconds
         ULAIO01.txt_count = 0  # for the order of the KHZtext file
         self.period = 1
+        self.time = 1
         print("count", curr_count)
         for i in list(range(0, curr_count)):  # curr_count should represent the length of the ctypes_array
             eng_value = ul.to_eng_units(
@@ -493,6 +507,10 @@ class ULAIO01(UIExample):
             move(target_file, xml_location)
             tree = et.parse(xml_location)#C:\Bachelor\FinishedSoft\
 
+            periodnumber = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get()))
+            self.totalperiod = tree.find('sequence')
+            self.totalperiod.set('periods', "%d" %periodnumber)
+
             self.firstname = tree.find("./metadata/experimenter/firstname")
             self.firstname.text = str(self.input_firstname.get())
 
@@ -502,17 +520,19 @@ class ULAIO01(UIExample):
             self.orcid = tree.find("./metadata/experimenter/orcid")
             self.orcid.text = str(self.input_orcid.get())
 
+            flytype = self.input_flytype.get()
             self.fly = tree.find("./metadata/fly")
-            self.fly.attribute = str(self.input_flytype.get())
+            self.fly.set('type', "%s" %flytype)
+
+            exptype = self.input_experimenttype.get()
+            self.experiment_type = tree.find("./metadata/experiment")
+            self.experiment_type.set('type', "%s" %exptype)
 
             self.fly_name = tree.find("./metadata/fly/name")
             self.fly_name.text = str(self.input_flyname.get())
 
             self.fly_description = tree.find("./metadata/fly/description")
             self.fly_description.text = str(self.input_flydescription.get())
-
-            # x = tree.find("./metadata/experiment")
-            # x.attribute = str(self.input_experimenttype
 
             self.experiment_dateTime = tree.find("./metadata/experiment/dateTime")
             self.experiment_dateTime.text = str(self.input_dateTime.get())
@@ -824,13 +844,6 @@ class ULAIO01(UIExample):
             self.input_dateTime = tk.Entry(xml_groupbox)
             self.input_dateTime.grid(row=curr_row, column=2, sticky=tk.W)
             self.input_dateTime.insert(0, datetime.now().isoformat()) # display current datetime
-
-            # curr_row += 1
-            # label = tk.Label(xml_groupbox, text="Period Duration")
-            # label.grid(row=curr_row, column=1, sticky=tk.W)
-            # self.input_duration = tk.Entry(xml_groupbox)
-            # self.input_duration.grid(row=curr_row, column=2, sticky=tk.W)
-            # self.input_duration.insert(20, "20")
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Experiment Description")
