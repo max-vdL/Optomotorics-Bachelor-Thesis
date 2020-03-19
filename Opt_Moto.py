@@ -507,6 +507,10 @@ class ULAIO01(UIExample):
             move(target_file, xml_location)
             tree = et.parse(xml_location)#C:\Bachelor\FinishedSoft\
 
+            periodnumber = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get()))
+            self.totalperiod = tree.find('sequence')
+            self.totalperiod.set('periods', "%d" %periodnumber)
+
             self.firstname = tree.find("./metadata/experimenter/firstname")
             self.firstname.text = str(self.input_firstname.get())
 
@@ -516,17 +520,19 @@ class ULAIO01(UIExample):
             self.orcid = tree.find("./metadata/experimenter/orcid")
             self.orcid.text = str(self.input_orcid.get())
 
+            flytype = self.input_flytype.get()
             self.fly = tree.find("./metadata/fly")
-            self.fly.attribute = str(self.input_flytype.get())
+            self.fly.set('type', "%s" %flytype)
+
+            exptype = self.input_experimenttype.get()
+            self.experiment_type = tree.find("./metadata/experiment")
+            self.experiment_type.set('type', "%s" %exptype)
 
             self.fly_name = tree.find("./metadata/fly/name")
             self.fly_name.text = str(self.input_flyname.get())
 
             self.fly_description = tree.find("./metadata/fly/description")
             self.fly_description.text = str(self.input_flydescription.get())
-
-            # x = tree.find("./metadata/experiment")
-            # x.attribute = str(self.input_experimenttype
 
             self.experiment_dateTime = tree.find("./metadata/experiment/dateTime")
             self.experiment_dateTime.text = str(self.input_dateTime.get())
@@ -838,13 +844,6 @@ class ULAIO01(UIExample):
             self.input_dateTime = tk.Entry(xml_groupbox)
             self.input_dateTime.grid(row=curr_row, column=2, sticky=tk.W)
             self.input_dateTime.insert(0, datetime.now().isoformat()) # display current datetime
-
-            # curr_row += 1
-            # label = tk.Label(xml_groupbox, text="Period Duration")
-            # label.grid(row=curr_row, column=1, sticky=tk.W)
-            # self.input_duration = tk.Entry(xml_groupbox)
-            # self.input_duration.grid(row=curr_row, column=2, sticky=tk.W)
-            # self.input_duration.insert(20, "20")
 
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Experiment Description")
