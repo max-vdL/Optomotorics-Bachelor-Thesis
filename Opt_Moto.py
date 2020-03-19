@@ -280,6 +280,8 @@ class ULAIO01(UIExample):
 
         self.save_pattern.text = str(self.input_Pattern.get())
 
+        self.save_contingency.text = str(self.input_contingency.get())
+
         self.save_lowchan.text = str(self.input_low_channel_entry.get())
 
         self.save_highchan.text = str(self.input_high_channel_entry.get())
@@ -565,6 +567,8 @@ class ULAIO01(UIExample):
                 duration.text = str(self.periodbox.get())
                 outcome = et.SubElement(period, "outcome")
                 outcome.text = str(self.input_outcome.get())
+                contingency = et.SubElement(period, "contingency")
+                contingency.text = str(self.input_contingency.get())
                 pattern = et.SubElement(period, "pattern")
                 pattern.text = str(self.input_Pattern.get())
 
@@ -862,7 +866,7 @@ class ULAIO01(UIExample):
             self.input_filename.insert(0, self.save_filename.text)
 
             curr_row += 1
-            label = tk.Label(xml_groupbox, text="Samplingrate(Hz)")
+            label = tk.Label(xml_groupbox, text="Samplingrate(set to 100 Hz)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_Samplingrate = tk.Entry(xml_groupbox)
             self.input_Samplingrate.grid(row=curr_row, column=2, sticky=tk.W)
@@ -870,7 +874,15 @@ class ULAIO01(UIExample):
             self.input_Samplingrate.insert(int(self.save_samplingrate.text), self.save_samplingrate.text)
 
             curr_row += 1
-            label = tk.Label(xml_groupbox, text="Outcome (number)")
+            label = tk.Label(xml_groupbox, text="Contingency (y or n)")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_contingency = tk.Entry(xml_groupbox)
+            self.input_contingency.grid(row=curr_row, column=2, sticky=tk.W)
+            self.save_contingency = self.save_tree.find("./input/contingency") # load the latest input
+            self.input_contingency.insert(int(self.save_contingency.text), self.save_outcome.text)
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Outcome (always 0)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_outcome = tk.Entry(xml_groupbox)
             self.input_outcome.grid(row=curr_row, column=2, sticky=tk.W)
@@ -878,12 +890,13 @@ class ULAIO01(UIExample):
             self.input_outcome.insert(int(self.save_outcome.text), self.save_outcome.text)
 
             curr_row += 1
-            label = tk.Label(xml_groupbox, text="Pattern(number)")
+            label = tk.Label(xml_groupbox, text="Pattern(always 4)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_Pattern = tk.Entry(xml_groupbox)
             self.input_Pattern.grid(row=curr_row, column=2, sticky=tk.W)
             self.save_pattern = self.save_tree.find("./input/pattern") # load the latest input
             self.input_Pattern.insert(int(self.save_pattern.text), self.save_pattern.text)
+
 
             ####################### OUTPUT #############################
 
