@@ -26,7 +26,10 @@ class ULAIO01(UIExample):
         super(ULAIO01, self).__init__(master)
 
         self.period = 1
+        self.time = 1
+        self.direction = "Right Turn"
         self.period_switch = []
+        self.time_switch = []
 
         self.tempo = None   # for arena output
 
@@ -45,6 +48,8 @@ class ULAIO01(UIExample):
 
         self.periodtime = int(self.periodbox.get())  # variable of the duration in sec
         self.periodtimevar = self.periodtime  # a placeholder of periodtime which can be changed
+        self.timeclock = 1
+        self.timevar = self.timeclock
 
         if self.input_low_chan > self.input_high_chan:
             messagebox.showerror(
@@ -124,6 +129,7 @@ class ULAIO01(UIExample):
 
         # Update period if necessary
         self.update_input_period(curr_count)
+        self.update_input_time(curr_count)
 
         # Display the values
         self.display_input_values(range_, curr_index, curr_count)
@@ -150,8 +156,15 @@ class ULAIO01(UIExample):
             self.input_status_label["text"] = "Running"
 
         self.input_period_label["text"] = self.period
-        self.input_index_label["text"] = str(curr_index)
-        self.input_count_label["text"] = str(curr_count)
+        self.input_time_label["text"] = self.time
+
+    def update_input_time(self, curr_count):
+        if t.clock() > self.timevar:
+            # Beep(2000, 500)
+            self.time += 1 # switch to next period
+            self.timevar = self.timevar + self.timeclock
+            self.time_switch.append(curr_count) # documentation of period switch
+            self.update_arena_output()
 
     def update_input_period(self, curr_count):
         if t.clock() > self.periodtimevar:
@@ -161,10 +174,13 @@ class ULAIO01(UIExample):
             self.period_switch.append(curr_count) # documentation of period switch
 
             if self.tempo == 1.8:
-                print("twmpo", self.tempo)
+                print("Right Turn", self.period)
+                self.direction = "Right Turn"
                 self.tempo = 2.2 # make it relative to input!!!!
             else:
                 self.tempo = 1.8
+                self.direction = "Left Turn"
+                print("Left Turn", self.period)
             self.update_arena_output()
 
     def display_input_values(self, range_, curr_index, curr_count):
@@ -267,6 +283,8 @@ class ULAIO01(UIExample):
 
         self.save_pattern.text = str(self.input_Pattern.get())
 
+        self.save_contingency.text = str(self.input_contingency.get())
+
         self.save_lowchan.text = str(self.input_low_channel_entry.get())
 
         self.save_highchan.text = str(self.input_high_channel_entry.get())
@@ -365,6 +383,7 @@ class ULAIO01(UIExample):
         self.input_low_channel_entry["state"] = tk.DISABLED
         self.periodbox["state"] = tk.DISABLED
         self.testtimebox["state"] = tk.DISABLED
+        print("Right Turn", self.period)
         #self.input_start_button["command"] = self.stop_input()
         if self.input_start_button["text"] == "Stop Analog Input":
             self.full_file()
@@ -482,7 +501,8 @@ class ULAIO01(UIExample):
             data = datafile.read()
             xml_name = self.input_filename.get() + ".xml"
             print(xml_name)
-            target_folder = os.path.join(os.curdir, "AndersSoft")
+            target_folder = os.path.join(os.curdir, "C:/Users/LocalAdmin/Desktop/Kurs")
+            shutil.copyfile("Optomotorics_blueprint2.xml", "Optomotorics_blueprint.xml")
             target_file = os.path.join(target_folder, "Optomotorics_blueprint.xml")
             xml_location = os.path.join(target_folder, xml_name)
             copy("Optomotorics_blueprint.xml", "AndersSoft")
@@ -502,17 +522,15 @@ class ULAIO01(UIExample):
             self.orcid = tree.find("./metadata/experimenter/orcid")
             self.orcid.text = str(self.input_orcid.get())
 
+            flytype = self.input_flytype.get()
             self.fly = tree.find("./metadata/fly")
-            self.fly.attribute = str(self.input_flytype.get())
+            self.fly.set('type', "%s" %flytype)
 
             self.fly_name = tree.find("./metadata/fly/name")
             self.fly_name.text = str(self.input_flyname.get())
 
             self.fly_description = tree.find("./metadata/fly/description")
             self.fly_description.text = str(self.input_flydescription.get())
-
-            # x = tree.find("./metadata/experiment")
-            # x.attribute = str(self.input_experimenttype
 
             self.experiment_dateTime = tree.find("./metadata/experiment/dateTime")
             self.experiment_dateTime.text = str(self.input_dateTime.get())
