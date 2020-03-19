@@ -26,7 +26,9 @@ class ULAIO01(UIExample):
         super(ULAIO01, self).__init__(master)
 
         self.period = 1
+        self.time = 1
         self.period_switch = []
+        self.time_switch = []
 
         self.tempo = None   # for arena output
 
@@ -45,6 +47,8 @@ class ULAIO01(UIExample):
 
         self.periodtime = int(self.periodbox.get())  # variable of the duration in sec
         self.periodtimevar = self.periodtime  # a placeholder of periodtime which can be changed
+        self.timeclock = 1
+        self.timevar = self.timeclock
 
         if self.input_low_chan > self.input_high_chan:
             messagebox.showerror(
@@ -124,6 +128,7 @@ class ULAIO01(UIExample):
 
         # Update period if necessary
         self.update_input_period(curr_count)
+        self.update_input_time(curr_count)
 
         # Display the values
         self.display_input_values(range_, curr_index, curr_count)
@@ -150,8 +155,17 @@ class ULAIO01(UIExample):
             self.input_status_label["text"] = "Running"
 
         self.input_period_label["text"] = self.period
-        self.input_index_label["text"] = str(curr_index)
-        self.input_count_label["text"] = str(curr_count)
+        self.input_time_label["text"] = self.time
+        self.input_index_label["text"] = "Running"
+        self.input_count_label["text"] = "Running"
+
+    def update_input_time(self, curr_count):
+        if t.clock() > self.timevar:
+            # Beep(2000, 500)
+            self.time += 1 # switch to next period
+            self.timevar = self.timevar + self.timeclock
+            self.time_switch.append(curr_count) # documentation of period switch
+            self.update_arena_output()
 
     def update_input_period(self, curr_count):
         if t.clock() > self.periodtimevar:
@@ -267,6 +281,8 @@ class ULAIO01(UIExample):
 
         self.save_pattern.text = str(self.input_Pattern.get())
 
+        self.save_contingency.text = str(self.input_contingency.get())
+
         self.save_lowchan.text = str(self.input_low_channel_entry.get())
 
         self.save_highchan.text = str(self.input_high_channel_entry.get())
@@ -333,6 +349,7 @@ class ULAIO01(UIExample):
         millisec = 0  # the time column parameter in milliseconds
         ULAIO01.txt_count = 0  # for the order of the KHZtext file
         self.period = 1
+        self.time = 1
         print("count", curr_count)
         for i in list(range(0, curr_count)):  # curr_count should represent the length of the ctypes_array
             eng_value = ul.to_eng_units(
@@ -483,6 +500,7 @@ class ULAIO01(UIExample):
             xml_name = self.input_filename.get() + ".xml"
             print(xml_name)
             target_folder = os.path.join(os.curdir, "AndersSoft")
+            shutil.copyfile("Optomotorics_blueprint2.xml", "Optomotorics_blueprint.xml")
             target_file = os.path.join(target_folder, "Optomotorics_blueprint.xml")
             xml_location = os.path.join(target_folder, xml_name)
             copy("Optomotorics_blueprint.xml", "AndersSoft")
@@ -493,6 +511,10 @@ class ULAIO01(UIExample):
             move(target_file, xml_location)
             tree = et.parse(xml_location)#C:\Bachelor\FinishedSoft\
 
+            periodnumber = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get()))
+            self.totalperiod = tree.find('sequence')
+            self.totalperiod.set('periods', "%d" %periodnumber)
+
             self.firstname = tree.find("./metadata/experimenter/firstname")
             self.firstname.text = str(self.input_firstname.get())
 
@@ -502,8 +524,13 @@ class ULAIO01(UIExample):
             self.orcid = tree.find("./metadata/experimenter/orcid")
             self.orcid.text = str(self.input_orcid.get())
 
+            flytype = self.input_flytype.get()
             self.fly = tree.find("./metadata/fly")
-            self.fly.attribute = str(self.input_flytype.get())
+            self.fly.set('type', "%s" %flytype)
+
+            exptype = self.input_experimenttype.get()
+            self.experiment_type = tree.find("./metadata/experiment")
+            self.experiment_type.set('type', "%s" %exptype)
 
             self.fly_name = tree.find("./metadata/fly/name")
             self.fly_name.text = str(self.input_flyname.get())
@@ -511,14 +538,12 @@ class ULAIO01(UIExample):
             self.fly_description = tree.find("./metadata/fly/description")
             self.fly_description.text = str(self.input_flydescription.get())
 
-            # x = tree.find("./metadata/experiment")
-            # x.attribute = str(self.input_experimenttype
-
             self.experiment_dateTime = tree.find("./metadata/experiment/dateTime")
             self.experiment_dateTime.text = str(self.input_dateTime.get())
 
+            duration = int(self.testtimebox.get()) * 60
             self.experiment_duration = tree.find("./metadata/experiment/duration")
-            self.experiment_duration.text = str(self.testtimebox.get())
+            self.experiment_duration.text = str(duration)
 
             self.experiment_description = tree.find("./metadata/experiment/description")
             self.experiment_description.text = str(self.input_ExperimentDescription.get())
@@ -528,7 +553,7 @@ class ULAIO01(UIExample):
 
             self.sequences = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get())) + 1
             sequence = tree.find("./sequence")
-            sequence.attribute = self.sequences
+            #sequence.attribute = self.sequences
 
             # perioddescription
             for i in list(range(1, self.sequences)):
@@ -545,6 +570,8 @@ class ULAIO01(UIExample):
                 duration.text = str(self.periodbox.get())
                 outcome = et.SubElement(period, "outcome")
                 outcome.text = str(self.input_outcome.get())
+                contingency = et.SubElement(period, "contingency")
+                contingency.text = str(self.input_contingency.get())
                 pattern = et.SubElement(period, "pattern")
                 pattern.text = str(self.input_Pattern.get())
 
@@ -677,6 +704,8 @@ class ULAIO01(UIExample):
                 self.testtimebox.insert(int(self.save_testtime.text), self.save_testtime.text)
                 self.testtimebox.grid(
                     row=curr_row, column=1, sticky=tk.W)
+                self.durationseconds = int(self.testtimebox.get()) * 60
+                self.totperiod = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get()))
 
 
             # selfmade, for datasheet option (source: effbot tkinter checkbutton)
@@ -728,6 +757,15 @@ class ULAIO01(UIExample):
             self.input_period_label = tk.Label(self.input_results_group)
             self.input_period_label["text"] = "-1"
             self.input_period_label.grid(row=curr_row, column=1, sticky=tk.W)
+
+            curr_row += 1
+            input_time_left_label = tk.Label(self.input_results_group)
+            input_time_left_label["text"] = "Time:"
+            input_time_left_label.grid(row=curr_row, column=0, sticky=tk.W)
+
+            self.input_time_label = tk.Label(self.input_results_group)
+            self.input_time_label["text"] = "-1"
+            self.input_time_label.grid(row=curr_row, column=1, sticky=tk.W)
 
             curr_row += 1
             input_index_left_label = tk.Label(self.input_results_group)
@@ -825,13 +863,6 @@ class ULAIO01(UIExample):
             self.input_dateTime.grid(row=curr_row, column=2, sticky=tk.W)
             self.input_dateTime.insert(0, datetime.now().isoformat()) # display current datetime
 
-            # curr_row += 1
-            # label = tk.Label(xml_groupbox, text="Period Duration")
-            # label.grid(row=curr_row, column=1, sticky=tk.W)
-            # self.input_duration = tk.Entry(xml_groupbox)
-            # self.input_duration.grid(row=curr_row, column=2, sticky=tk.W)
-            # self.input_duration.insert(20, "20")
-
             curr_row += 1
             label = tk.Label(xml_groupbox, text="Experiment Description")
             label.grid(row=curr_row, column=1, sticky=tk.W)
@@ -849,7 +880,7 @@ class ULAIO01(UIExample):
             self.input_filename.insert(0, self.save_filename.text)
 
             curr_row += 1
-            label = tk.Label(xml_groupbox, text="Samplingrate(Hz)")
+            label = tk.Label(xml_groupbox, text="Samplingrate(set to 100 Hz)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_Samplingrate = tk.Entry(xml_groupbox)
             self.input_Samplingrate.grid(row=curr_row, column=2, sticky=tk.W)
@@ -857,7 +888,15 @@ class ULAIO01(UIExample):
             self.input_Samplingrate.insert(int(self.save_samplingrate.text), self.save_samplingrate.text)
 
             curr_row += 1
-            label = tk.Label(xml_groupbox, text="Outcome (number)")
+            label = tk.Label(xml_groupbox, text="Contingency (y or n)")
+            label.grid(row=curr_row, column=1, sticky=tk.W)
+            self.input_contingency = tk.Entry(xml_groupbox)
+            self.input_contingency.grid(row=curr_row, column=2, sticky=tk.W)
+            self.save_contingency = self.save_tree.find("./input/contingency") # load the latest input
+            self.input_contingency.insert(int(self.save_contingency.text), self.save_outcome.text)
+
+            curr_row += 1
+            label = tk.Label(xml_groupbox, text="Outcome (always 0)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_outcome = tk.Entry(xml_groupbox)
             self.input_outcome.grid(row=curr_row, column=2, sticky=tk.W)
@@ -865,7 +904,7 @@ class ULAIO01(UIExample):
             self.input_outcome.insert(int(self.save_outcome.text), self.save_outcome.text)
 
             curr_row += 1
-            label = tk.Label(xml_groupbox, text="Pattern(number)")
+            label = tk.Label(xml_groupbox, text="Pattern(always 4)")
             label.grid(row=curr_row, column=1, sticky=tk.W)
             self.input_Pattern = tk.Entry(xml_groupbox)
             self.input_Pattern.grid(row=curr_row, column=2, sticky=tk.W)
