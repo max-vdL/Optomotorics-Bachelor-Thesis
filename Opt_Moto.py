@@ -128,6 +128,7 @@ class ULAIO01(UIExample):
 
         # Update period if necessary
         self.update_input_period(curr_count)
+        self.update_input_time(curr_count)
 
         # Display the values
         self.display_input_values(range_, curr_index, curr_count)
@@ -499,6 +500,7 @@ class ULAIO01(UIExample):
             xml_name = self.input_filename.get() + ".xml"
             print(xml_name)
             target_folder = os.path.join(os.curdir, "AndersSoft")
+            shutil.copyfile("Optomotorics_blueprint2.xml", "Optomotorics_blueprint.xml")
             target_file = os.path.join(target_folder, "Optomotorics_blueprint.xml")
             xml_location = os.path.join(target_folder, xml_name)
             copy("Optomotorics_blueprint.xml", "AndersSoft")
@@ -539,8 +541,9 @@ class ULAIO01(UIExample):
             self.experiment_dateTime = tree.find("./metadata/experiment/dateTime")
             self.experiment_dateTime.text = str(self.input_dateTime.get())
 
+            duration = int(self.testtimebox.get()) * 60
             self.experiment_duration = tree.find("./metadata/experiment/duration")
-            self.experiment_duration.text = str(self.testtimebox.get())
+            self.experiment_duration.text = str(duration)
 
             self.experiment_description = tree.find("./metadata/experiment/description")
             self.experiment_description.text = str(self.input_ExperimentDescription.get())
@@ -550,7 +553,7 @@ class ULAIO01(UIExample):
 
             self.sequences = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get())) + 1
             sequence = tree.find("./sequence")
-            sequence.attribute = self.sequences
+            #sequence.attribute = self.sequences
 
             # perioddescription
             for i in list(range(1, self.sequences)):
@@ -701,6 +704,8 @@ class ULAIO01(UIExample):
                 self.testtimebox.insert(int(self.save_testtime.text), self.save_testtime.text)
                 self.testtimebox.grid(
                     row=curr_row, column=1, sticky=tk.W)
+                self.durationseconds = int(self.testtimebox.get()) * 60
+                self.totperiod = int(int(self.testtimebox.get()) * 60 / int(self.periodbox.get()))
 
 
             # selfmade, for datasheet option (source: effbot tkinter checkbutton)
@@ -752,6 +757,15 @@ class ULAIO01(UIExample):
             self.input_period_label = tk.Label(self.input_results_group)
             self.input_period_label["text"] = "-1"
             self.input_period_label.grid(row=curr_row, column=1, sticky=tk.W)
+
+            curr_row += 1
+            input_time_left_label = tk.Label(self.input_results_group)
+            input_time_left_label["text"] = "Time:"
+            input_time_left_label.grid(row=curr_row, column=0, sticky=tk.W)
+
+            self.input_time_label = tk.Label(self.input_results_group)
+            self.input_time_label["text"] = "-1"
+            self.input_time_label.grid(row=curr_row, column=1, sticky=tk.W)
 
             curr_row += 1
             input_index_left_label = tk.Label(self.input_results_group)
@@ -896,7 +910,6 @@ class ULAIO01(UIExample):
             self.input_Pattern.grid(row=curr_row, column=2, sticky=tk.W)
             self.save_pattern = self.save_tree.find("./input/pattern") # load the latest input
             self.input_Pattern.insert(int(self.save_pattern.text), self.save_pattern.text)
-
 
             ####################### OUTPUT #############################
 
